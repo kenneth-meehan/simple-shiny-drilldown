@@ -37,12 +37,12 @@ server <- function(input, output) {
   
   output$plot1 <- renderPlot({
     ggplot(df, aes(schools, nitems)) +
-      geom_point()
+      geom_bar(stat = "identity", fill='goldenrod')
   })
   
   output$plot2 <- renderPlot({
     ggplot(df, aes(schools, nitems)) +
-      geom_point() +
+      geom_bar(stat = "identity", fill='goldenrod') +
       coord_cartesian(xlim = ranges$x, ylim = ranges$y, expand = FALSE)
   })
   
