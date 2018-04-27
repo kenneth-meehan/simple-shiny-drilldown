@@ -288,9 +288,11 @@ server <- function(input, output, session) {
         column(4, 
           actionButton(btnID, "X", class = "grey_btn pull-right"),
           valueBox(width = NULL,
-            value = glue("{val} €"), 
+            #value = glue("{val} €"),   #Replace € with $ twice. -KM
+            value = glue("${val}"),
             subtitle = glue("{input$studio_function} over {input$studio_subcategory} ", 
-              "for {direction} {input$studio_amount} €"), 
+              # "for {direction} {input$studio_amount} €"),
+              "for {direction} ${input$studio_amount}"), 
             color = studioBoxColor()
           )
         )

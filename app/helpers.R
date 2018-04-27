@@ -152,5 +152,5 @@ getClickedPoint <- function(treeDat, click) {
 
 prettifyValueBox <- function(val, subtitle, color) {
   val <- prettyNum(val, big.mark = ",")
-  valueBox(value = glue("{val} €"), subtitle = subtitle, color = color)
+  valueBox(value = glue("${val}"), subtitle = subtitle, color = color)
 }
