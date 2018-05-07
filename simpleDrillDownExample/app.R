@@ -23,7 +23,7 @@ ui <- fluidPage(
                     )
              ),
              column(width = 6,
-                    plotOutput("plot2", height = 500)
+                    h2(textOutput("text2"))
              )
            )
     )
@@ -41,10 +41,8 @@ server <- function(input, output) {
       geom_bar(stat = "identity", fill='goldenrod')
   })
   
-  output$plot2 <- renderPlot({
-    ggplot(df, aes(schools, nitems)) +
-      geom_bar(stat = "identity", fill='goldenrod') +
-      coord_cartesian(xlim = ranges$x, ylim = ranges$y, expand = FALSE)
+  output$text2 <- renderText({
+      expr=paste(round(as.numeric(ranges$x),2),round(as.numeric(ranges$y),2))
   })
   
   # When a double-click happens, check if there's a brush on the plot.
