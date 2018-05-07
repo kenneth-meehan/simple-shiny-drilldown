@@ -11,14 +11,10 @@ ui <- fluidPage(
   fluidRow(
 
     column(width = 12, class = "well",
-           h5("Left plot controls right plot. Brush to zoom. Click outside brush area to reset."),
+           h5("Click on plot to see coordinates at right."),
            fluidRow(
              column(width = 6,
                     plotOutput("plot1", height = 500,
-                               brush = brushOpts(
-                                 id = "plot1_brush",
-                                 resetOnNew = TRUE
-                               ),
                                click="plot1_click"
                     )
              ),
@@ -33,30 +29,27 @@ ui <- fluidPage(
 
 server <- function(input, output) {
   
-  # Linked plots (left and right)
   ranges <- reactiveValues(x = NULL, y = NULL)
   
   output$plot1 <- renderPlot({
     ggplot(df, aes(schools, nitems)) +
       geom_bar(stat = "identity", fill='goldenrod')
   })
-  
-  output$text2 <- renderText({
-      expr=paste(round(as.numeric(ranges$x),2),round(as.numeric(ranges$y),2))
-  })
-  
-  # When a double-click happens, check if there's a brush on the plot.
-  # If so, zoom to the brush bounds; if not, reset the zoom.
+
   observe({
-    brush <- input$plot1_brush
-    if (!is.null(brush)) {
-      ranges$x <- c(brush$xmin, brush$xmax)
-      ranges$y <- c(brush$ymin, brush$ymax)
-      
-    } else {
-      ranges$x <- NULL
-      ranges$y <- NULL
-    }
+    if(is.null(input$plot1_click$x)) return(NULL)
+    click         <- c(input$plot1_click$x, input$plot1_click$y)
+    #print(click) #Unneeded diagnostic output to Console
+
+    output$click1_info <- renderText({
+      click
+    })
+    
+    output$text2 <- renderText({
+      expr=click
+    })
+    
+
   })
 
 }
