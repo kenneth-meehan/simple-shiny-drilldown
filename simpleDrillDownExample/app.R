@@ -66,8 +66,9 @@ server <- function(input, output) {
         x_pos <- length(unique(df$months))/2 + 0.5 #midway across graph
         y_pos <- 0.8*ylims[2] #80% of way up 
         dfs <- df[df$schools==school,]
-        ggplot(dfs, aes(months, nitems)) +
-          geom_bar(stat = "identity", fill='goldenrod') +
+        ggplot(dfs, aes(x=months, y=nitems, group=1)) +
+          geom_line(size=2) + geom_point(size=5, color='goldenrod') +
+          #geom_bar(stat = "identity", fill='goldenrod') +
           coord_cartesian(ylim=ylims) +  #want same y-scale as 1st graph
           annotate("text", label=school, x=x_pos, y=y_pos, size=10)
       }
