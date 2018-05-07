@@ -13,13 +13,16 @@ ui <- fluidPage(
     column(width = 12, class = "well",
            h5("Click on plot to see coordinates at right."),
            fluidRow(
-             column(width = 6,
+             column(width = 5,
                     plotOutput("plot1", height = 500,
                                click="plot1_click"
                     )
              ),
-             column(width = 6,
-                    h2(textOutput("text2"))
+             column(width = 3,
+                    h3(textOutput("text1"))
+             ),
+             column(width = 3,
+                    h3(textOutput("text2"))
              )
            )
     )
@@ -41,8 +44,12 @@ server <- function(input, output) {
     click <- c(input$plot1_click$x, input$plot1_click$y)
     #print(click) #Unneeded diagnostic output to Console
 
-    output$text2 <- renderText({
+    output$text1 <- renderText({
       expr=click
+    })
+    
+    output$text2 <- renderText({
+      expr=round(input$plot1_click$y)
     })
     
 
