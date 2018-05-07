@@ -38,13 +38,9 @@ server <- function(input, output) {
 
   observe({
     if(is.null(input$plot1_click$x)) return(NULL)
-    click         <- c(input$plot1_click$x, input$plot1_click$y)
+    click <- c(input$plot1_click$x, input$plot1_click$y)
     #print(click) #Unneeded diagnostic output to Console
 
-    output$click1_info <- renderText({
-      click
-    })
-    
     output$text2 <- renderText({
       expr=click
     })
