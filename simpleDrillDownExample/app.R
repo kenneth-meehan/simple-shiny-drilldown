@@ -18,7 +18,8 @@ ui <- fluidPage(
                                brush = brushOpts(
                                  id = "plot1_brush",
                                  resetOnNew = TRUE
-                               )
+                               ),
+                               click="plot1_click"
                     )
              ),
              column(width = 6,
@@ -59,7 +60,7 @@ server <- function(input, output) {
       ranges$y <- NULL
     }
   })
-  
+
 }
 
 shinyApp(ui, server)
