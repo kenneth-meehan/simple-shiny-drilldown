@@ -1,28 +1,30 @@
 library(ggplot2)
 
+#Set up bogus dataframe:
 months <- c("Jan", "Jan", "Jan", "Feb", "Feb", "Feb", "Mar", "Mar", "Mar")
 schools <- c("School A", "School B", "School C", "School A", "School B", "School C","School A", "School B", "School C")
 nitems <- c(0, 1016, 2001, 666, 1962, 1999, 1776, 2018, 2525)
 df <- as.data.frame(cbind(months, schools, nitems))
 df$nitems <- as.integer(as.character(df$nitems))
+df$months <- factor(df$months, levels=c("Jan", "Feb", "Mar"))
 
-
+#Define user interface:
 ui <- fluidPage(
   fluidRow(
 
     column(width = 12, class = "well",
-           h5("Click on plot to see coordinates at right."),
+           h5("Click on left plot to see coordinates and drill down."),
            fluidRow(
              column(width = 5,
                     plotOutput("plot1", height = 500,
                                click="plot1_click"
                     )
              ),
-             column(width = 3,
-                    h3(textOutput("text1"))
+             column(width = 2,
+                    textOutput("text1")
              ),
-             column(width = 3,
-                    h3(textOutput("text2"))
+             column(width = 5,
+                    plotOutput("plot2", height=500)
              )
            )
     )
@@ -30,31 +32,46 @@ ui <- fluidPage(
   )
 )
 
+#Define server:
 server <- function(input, output) {
   
   ranges <- reactiveValues(x = NULL, y = NULL)
   
   output$plot1 <- renderPlot({
-    ggplot(df, aes(schools, nitems)) +
-      geom_bar(stat = "identity", fill='goldenrod')
+    p <- ggplot(df, aes(schools, nitems)) +
+         geom_bar(stat = "identity", fill='goldenrod')
+    p
   })
 
+
+  
   observe({
     if(is.null(input$plot1_click$x)) return(NULL)
     clicktext <- c(input$plot1_click$x, input$plot1_click$y)
     cx <- input$plot1_click$x
     cy <- input$plot1_click$y
-    #print(click) #Unneeded diagnostic output to Console
 
     output$text1 <- renderText({
-      expr=clicktext
+      expr=paste("click coords:",clicktext[1], clicktext[2])
     })
-    
-    output$text2 <- renderText({
-      expr=ifelse(cx>0.5 & cx<=1.5 & cy<=2442,"School A",
+
+    output$plot2 <- renderPlot({
+      school=ifelse(cx>0.5 & cx<=1.5 & cy<=2442,"School A",
                   ifelse(cx>1.5 & cx<=2.5 & cy<=4996, "School B",
                          ifelse(cx>2.5 & cx<=3.5 & cy<=6515, "School C",
                                 "")))
+      if(!school==""){
+      xlims <- ggplot_build(p)$layout$panel_scales_x[[1]]$range$range
+      x_pos <- length(xlims)/2 +0.5
+      ylims <- ggplot_build(p)$layout$panel_scales_y[[1]]$range$range
+      y_pos <- 0.9*ylims[2]
+      dfs <- df[df$schools==school,]
+      ggplot(dfs, aes(months, nitems)) +
+        geom_bar(stat = "identity", fill='goldenrod') +
+        #copy y range from first graph:
+        coord_cartesian(ylim=ylims) +
+        annotate("text", label=school, x=x_pos, y=y_pos, size=10)
+      }
     })
     
 
