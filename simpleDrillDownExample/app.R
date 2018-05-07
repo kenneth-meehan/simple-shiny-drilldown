@@ -41,15 +41,20 @@ server <- function(input, output) {
 
   observe({
     if(is.null(input$plot1_click$x)) return(NULL)
-    click <- c(input$plot1_click$x, input$plot1_click$y)
+    clicktext <- c(input$plot1_click$x, input$plot1_click$y)
+    cx <- input$plot1_click$x
+    cy <- input$plot1_click$y
     #print(click) #Unneeded diagnostic output to Console
 
     output$text1 <- renderText({
-      expr=click
+      expr=clicktext
     })
     
     output$text2 <- renderText({
-      expr=round(input$plot1_click$y)
+      expr=ifelse(cx>0.5 & cx<=1.5 & cy<=2442,"School A",
+                  ifelse(cx>1.5 & cx<=2.5 & cy<=4996, "School B",
+                         ifelse(cx>2.5 & cx<=3.5 & cy<=6515, "School C",
+                                "")))
     })
     
 
