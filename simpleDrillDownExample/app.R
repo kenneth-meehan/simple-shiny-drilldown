@@ -1,12 +1,13 @@
 library(ggplot2)
 
 #Set up bogus dataframe:
-months <- c("Jan", "Jan", "Jan", "Feb", "Feb", "Feb", "Mar", "Mar", "Mar")
-schools <- c("School A", "School B", "School C", "School A", "School B", "School C","School A", "School B", "School C")
-nitems <- c(0, 1016, 2001, 666, 1962, 1999, 1776, 2018, 2525)
+months <- c("Jan", "Jan", "Jan", "Feb", "Feb", "Feb", "Mar", "Mar", "Mar", "Apr", "Apr", "Apr")
+schools <- c("School A", "School B", "School C", "School A", "School B", "School C",
+             "School A", "School B", "School C", "School A", "School B", "School C")
+nitems <- c(0, 1016, 2001, 666, 1962, 1999, 1776, 2018, 2525, 1000, 1000, 1000)
 df <- as.data.frame(cbind(months, schools, nitems))
 df$nitems <- as.integer(as.character(df$nitems))
-df$months <- factor(df$months, levels=c("Jan", "Feb", "Mar"))
+df$months <- factor(df$months, levels=c("Jan", "Feb", "Mar", "Apr"))
 
 #Define user interface:
 ui <- fluidPage(
@@ -40,11 +41,11 @@ server <- function(input, output) {
   output$plot1 <- renderPlot({
     p <- ggplot(df, aes(schools, nitems)) +
          geom_bar(stat = "identity", fill='goldenrod')
+    ylims <<- ggplot_build(p)$layout$panel_scales_y[[1]]$range$range #assign to outer env with <<-
     p
   })
 
 
-  
   observe({
     if(is.null(input$plot1_click$x)) return(NULL)
     clicktext <- c(input$plot1_click$x, input$plot1_click$y)
@@ -56,21 +57,19 @@ server <- function(input, output) {
     })
 
     output$plot2 <- renderPlot({
-      school=ifelse(cx>0.5 & cx<=1.5 & cy<=2442,"School A",
-                  ifelse(cx>1.5 & cx<=2.5 & cy<=4996, "School B",
-                         ifelse(cx>2.5 & cx<=3.5 & cy<=6515, "School C",
+      #Find what school was clicked for:
+      school=ifelse(cx>0.5 & cx<=1.5 & cy<=sum(df$nitems[df$schools=="School A"]),"School A",
+                  ifelse(cx>1.5 & cx<=2.5 & cy<=sum(df$nitems[df$schools=="School B"]), "School B",
+                         ifelse(cx>2.5 & cx<=3.5 & cy<=sum(df$nitems[df$schools=="School C"]), "School C",
                                 "")))
       if(!school==""){
-      xlims <- ggplot_build(p)$layout$panel_scales_x[[1]]$range$range
-      x_pos <- length(xlims)/2 +0.5
-      ylims <- ggplot_build(p)$layout$panel_scales_y[[1]]$range$range
-      y_pos <- 0.9*ylims[2]
-      dfs <- df[df$schools==school,]
-      ggplot(dfs, aes(months, nitems)) +
-        geom_bar(stat = "identity", fill='goldenrod') +
-        #copy y range from first graph:
-        coord_cartesian(ylim=ylims) +
-        annotate("text", label=school, x=x_pos, y=y_pos, size=10)
+        x_pos <- length(unique(df$months))/2 + 0.5 #midway across graph
+        y_pos <- 0.8*ylims[2] #80% of way up 
+        dfs <- df[df$schools==school,]
+        ggplot(dfs, aes(months, nitems)) +
+          geom_bar(stat = "identity", fill='goldenrod') +
+          coord_cartesian(ylim=ylims) +  #want same y-scale as 1st graph
+          annotate("text", label=school, x=x_pos, y=y_pos, size=10)
       }
     })
     
