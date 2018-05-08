@@ -14,17 +14,17 @@ ui <- fluidPage(
   fluidRow(
 
     column(width = 12, class = "well",
-           h5("Click on left plot to see coordinates and drill down."),
+           h5("Click on left plot to drill down."),
            fluidRow(
-             column(width = 5,
+             column(width = 6,
                     plotOutput("plot1", height = 500,
                                click="plot1_click"
                     )
              ),
-             column(width = 2,
-                    textOutput("text1")
-             ),
-             column(width = 5,
+             # column(width = 2,
+             #        textOutput("text1")
+             # ),
+             column(width = 6,
                     plotOutput("plot2", height=500)
              )
            )
@@ -36,7 +36,7 @@ ui <- fluidPage(
 #Define server:
 server <- function(input, output) {
   
-  ranges <- reactiveValues(x = NULL, y = NULL)
+  #ranges <- reactiveValues(x = NULL, y = NULL)
   
   output$plot1 <- renderPlot({
     p <- ggplot(df, aes(schools, nitems)) +
@@ -44,7 +44,6 @@ server <- function(input, output) {
     ylims <<- ggplot_build(p)$layout$panel_scales_y[[1]]$range$range #assign to outer env with <<-
     p
   })
-
 
   observe({
     if(is.null(input$plot1_click$x)) return(NULL)
@@ -58,11 +57,22 @@ server <- function(input, output) {
 
     output$plot2 <- renderPlot({
       #Find what school was clicked for:
-      school=ifelse(cx>0.5 & cx<=1.5 & cy<=sum(df$nitems[df$schools=="School A"]),"School A",
-                  ifelse(cx>1.5 & cx<=2.5 & cy<=sum(df$nitems[df$schools=="School B"]), "School B",
-                         ifelse(cx>2.5 & cx<=3.5 & cy<=sum(df$nitems[df$schools=="School C"]), "School C",
-                                "")))
-      if(!school==""){
+      # school=ifelse(cx>0.5 & cx<=1.5 & cy<=sum(df$nitems[df$schools=="School A"]),"School A",
+      #             ifelse(cx>1.5 & cx<=2.5 & cy<=sum(df$nitems[df$schools=="School B"]), "School B",
+      #                    ifelse(cx>2.5 & cx<=3.5 & cy<=sum(df$nitems[df$schools=="School C"]), "School C",
+      #                           "")))
+      nbars <- length(levels(p$data[, p$labels$x]))  #how many bars in the source graph, actually how many values of x labels
+      xcuts <- seq(0.5, nbars+0.5, 1)   #x-values of boundaries bewteen bars' click zones
+      ytops <- rep(0, nbars) #max y values for each bar; initialize each to 0
+      for (bar in 1:nbars){
+       ytops[bar] <-  sum(df[df[, p$labels$x]==levels(p$data[, p$labels$x])[bar], p$labels$y]) #add up all y-values for this bar. CONVOLUTED!
+       if(cx>xcuts[bar] & cx<=xcuts[bar+1] & cy<ytops[bar]){
+         school <- levels(p$data[, p$labels$x])[bar]    #a little ugly that we must say school here. Could improve this?
+         break   #leave loop once you've found where the click was
+       }
+      }
+    
+      if(exists("school")){
         x_pos <- length(unique(df$months))/2 + 0.5 #midway across graph
         y_pos <- 0.8*ylims[2] #80% of way up 
         dfs <- df[df$schools==school,]
