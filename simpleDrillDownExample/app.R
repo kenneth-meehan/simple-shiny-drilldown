@@ -1,13 +1,19 @@
 library(ggplot2)
 
 #Set up bogus dataframe:
-months <- c("Jan", "Jan", "Jan", "Jan", "Feb", "Feb", "Feb", "Feb", "Mar", "Mar", "Mar", "Mar", "Apr", "Apr", "Apr", "Apr")
+months <- c("Jan", "Jan", "Jan", "Jan",
+            "Feb", "Feb", "Feb", "Feb",
+            "Mar", "Mar", "Mar", "Mar",
+            "Apr", "Apr", "Apr", "Apr",
+            "May", "May", "May", "May")
 schools <- c("School A", "School B", "School C", "School D", "School A", "School B", "School C", "School D",
-             "School A", "School B", "School C", "School D", "School A", "School B", "School C", "School D")
-nitems <- c(0, 1016, 2001, 501, 666, 1962, 1999, 2019, 1776, 2018, 2525, 3087, 1000, 1000, 1000, 1000)
+             "School A", "School B", "School C", "School D", "School A", "School B", "School C", "School D",
+             "School A", "School B", "School C", "School D")
+nitems <- c(0, 1016, 2001, 501, 666, 1962, 1999, 2019, 1776, 2018, 2525, 3087, 1000, 1000, 1000, 1000, 500, 500, 500, 500)
 df <- as.data.frame(cbind(months, schools, nitems))
 df$nitems <- as.integer(as.character(df$nitems))
-df$months <- factor(df$months, levels=c("Jan", "Feb", "Mar", "Apr"))
+df$months <- factor(df$months, levels=c("Jan", "Feb", "Mar", "Apr", "May"))
+
 
 #Define user interface:
 ui <- fluidPage(
@@ -21,9 +27,6 @@ ui <- fluidPage(
                                click="plot1_click"
                     )
              ),
-             # column(width = 2,
-             #        textOutput("text1")
-             # ),
              column(width = 6,
                     plotOutput("plot2", height=500)
              )
@@ -35,8 +38,6 @@ ui <- fluidPage(
 
 #Define server:
 server <- function(input, output) {
-  
-  #ranges <- reactiveValues(x = NULL, y = NULL)
   
   output$plot1 <- renderPlot({
     p <<- ggplot(df, aes(schools, nitems)) +
@@ -63,8 +64,8 @@ server <- function(input, output) {
       for (bar in 1:nbars){
        ytops[bar] <-  sum(df[df[, p$labels$x]==levels(p$data[, p$labels$x])[bar], p$labels$y]) #add up all y-values for this bar. CONVOLUTED!
        if(cx>xcuts[bar] & cx<=xcuts[bar+1] & cy<=ytops[bar]){
-         school <- levels(p$data[, p$labels$x])[bar]    #a little ugly that we must say school here. Could improve this?
-         break   #leave loop once you've found where the click was
+         school <- levels(p$data[, p$labels$x])[bar] #a little ugly that we say school here. Should be more generic.
+         break                                       #leave loop once you've found where the click was
        }
       }
     
