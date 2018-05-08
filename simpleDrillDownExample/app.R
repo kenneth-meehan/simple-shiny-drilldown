@@ -1,10 +1,10 @@
 library(ggplot2)
 
 #Set up bogus dataframe:
-months <- c("Jan", "Jan", "Jan", "Feb", "Feb", "Feb", "Mar", "Mar", "Mar", "Apr", "Apr", "Apr")
-schools <- c("School A", "School B", "School C", "School A", "School B", "School C",
-             "School A", "School B", "School C", "School A", "School B", "School C")
-nitems <- c(0, 1016, 2001, 666, 1962, 1999, 1776, 2018, 2525, 1000, 1000, 1000)
+months <- c("Jan", "Jan", "Jan", "Jan", "Feb", "Feb", "Feb", "Feb", "Mar", "Mar", "Mar", "Mar", "Apr", "Apr", "Apr", "Apr")
+schools <- c("School A", "School B", "School C", "School D", "School A", "School B", "School C", "School D",
+             "School A", "School B", "School C", "School D", "School A", "School B", "School C", "School D")
+nitems <- c(0, 1016, 2001, 501, 666, 1962, 1999, 2019, 1776, 2018, 2525, 3087, 1000, 1000, 1000, 1000)
 df <- as.data.frame(cbind(months, schools, nitems))
 df$nitems <- as.integer(as.character(df$nitems))
 df$months <- factor(df$months, levels=c("Jan", "Feb", "Mar", "Apr"))
@@ -39,7 +39,7 @@ server <- function(input, output) {
   #ranges <- reactiveValues(x = NULL, y = NULL)
   
   output$plot1 <- renderPlot({
-    p <- ggplot(df, aes(schools, nitems)) +
+    p <<- ggplot(df, aes(schools, nitems)) +
          geom_bar(stat = "identity", fill='goldenrod')
     ylims <<- ggplot_build(p)$layout$panel_scales_y[[1]]$range$range #assign to outer env with <<-
     p
@@ -56,23 +56,19 @@ server <- function(input, output) {
     })
 
     output$plot2 <- renderPlot({
-      #Find what school was clicked for:
-      # school=ifelse(cx>0.5 & cx<=1.5 & cy<=sum(df$nitems[df$schools=="School A"]),"School A",
-      #             ifelse(cx>1.5 & cx<=2.5 & cy<=sum(df$nitems[df$schools=="School B"]), "School B",
-      #                    ifelse(cx>2.5 & cx<=3.5 & cy<=sum(df$nitems[df$schools=="School C"]), "School C",
-      #                           "")))
+      #Find what bar was clicked:
       nbars <- length(levels(p$data[, p$labels$x]))  #how many bars in the source graph, actually how many values of x labels
-      xcuts <- seq(0.5, nbars+0.5, 1)   #x-values of boundaries bewteen bars' click zones
-      ytops <- rep(0, nbars) #max y values for each bar; initialize each to 0
+      xcuts <- seq(0.5, nbars+0.5, 1)                #x-values of boundaries bewteen bars' click zones
+      ytops <- rep(0, nbars)                         #max y values for each bar; initialize each to 0
       for (bar in 1:nbars){
        ytops[bar] <-  sum(df[df[, p$labels$x]==levels(p$data[, p$labels$x])[bar], p$labels$y]) #add up all y-values for this bar. CONVOLUTED!
-       if(cx>xcuts[bar] & cx<=xcuts[bar+1] & cy<ytops[bar]){
+       if(cx>xcuts[bar] & cx<=xcuts[bar+1] & cy<=ytops[bar]){
          school <- levels(p$data[, p$labels$x])[bar]    #a little ugly that we must say school here. Could improve this?
          break   #leave loop once you've found where the click was
        }
       }
     
-      if(exists("school")){
+      if(exists("school")){  #school won't exist if not set above
         x_pos <- length(unique(df$months))/2 + 0.5 #midway across graph
         y_pos <- 0.8*ylims[2] #80% of way up 
         dfs <- df[df$schools==school,]
