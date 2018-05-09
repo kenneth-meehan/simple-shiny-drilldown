@@ -43,7 +43,7 @@ ui <- fluidPage(
            fluidRow(
              column(width=12,
                     DT::dataTableOutput("mytable")
-                    )
+             )
            )
     )
     
@@ -54,7 +54,7 @@ ui <- fluidPage(
 server <- function(input, output) {
   
   y_dimension <- "Nitems"
-
+  
   df <- reactive({
     Nmonths  <- input$Nmonths
     Nschools <- input$Nschools
@@ -72,36 +72,36 @@ server <- function(input, output) {
   
   output$plot1 <- renderPlot({
     q <- ggplot(df(), aes_string(input$abscissa, as.name(y_dimension))) +
-         geom_bar(stat = "identity", fill='goldenrod')
+      geom_bar(stat = "identity", fill='goldenrod')
     ylims <<- ggplot_build(q)$layout$panel_scales_y[[1]]$range$range #assign to outer env with <<-
     q
-    })
-
+  })
+  
   #make graph a second time (as a function), to reference below
   p <- reactive({ggplot(df(), aes_string(input$abscissa, as.name(y_dimension))) +
-                 geom_bar(stat = "identity", fill='goldenrod')})
+      geom_bar(stat = "identity", fill='goldenrod')})
   
   observe({
     if(is.null(input$plot1_click$x)) return(NULL)
     clicktext <- c(input$plot1_click$x, input$plot1_click$y)
     cx <- input$plot1_click$x
     cy <- input$plot1_click$y
-
+    
     output$text1 <- renderText({
       expr=paste("click coords:",clicktext[1], clicktext[2])
     })
-
+    
     output$plot2 <- renderPlot({
       #Find what bar was clicked. Need p() and not p because p is a function and not an object. Same for df().
       nbars <- length(levels(p()$data[, p()$labels$x]))  #how many bars in the source graph, actually how many values of x labels
       xcuts <- seq(0.5, nbars+0.5, 1)                    #x-values of boundaries bewteen bars' click zones
       ytops <- rep(0, nbars)                             #max y values for each bar; initialize each to 0
       for (bar in 1:nbars){
-       ytops[bar] <-  sum(df()[df()[, p()$labels$x]==levels(p()$data[, p()$labels$x])[bar], p()$labels$y]) #add up all y-values for this bar. Sleek!
-       if(cx>xcuts[bar] & cx<=xcuts[bar+1] & cy<=ytops[bar]){         #If click is in this bar,
-         assign(p()$labels$x, levels(p()$data[, p()$labels$x])[bar])  #Assign to Schools or Months the label of that bar
-         break                                                        #Leave loop once you've found where the click was
-       }
+        ytops[bar] <-  sum(df()[df()[, p()$labels$x]==levels(p()$data[, p()$labels$x])[bar], p()$labels$y]) #add up all y-values for this bar. Sleek!
+        if(cx>xcuts[bar] & cx<=xcuts[bar+1] & cy<=ytops[bar]){         #If click is in this bar,
+          assign(p()$labels$x, levels(p()$data[, p()$labels$x])[bar])  #Assign to Schools or Months the label of that bar
+          break                                                        #Leave loop once you've found where the click was
+        }
       }
       if(exists("Schools")){  #if school has been chosen; drill down to nitems by month
         x_pos <- length(unique(df()$Months))/2 + 0.5 #midway across graph
@@ -112,15 +112,15 @@ server <- function(input, output) {
           coord_cartesian(ylim=ylims) +  #want same y-scale as 1st graph
           annotate("text", label=Schools, x=x_pos, y=y_pos, size=10)
       }else{
-      if(exists("Months")){  #else if month has been chosen; drill down to nitems by school
-        x_pos <- length(unique(df()$Schools))/2 + 0.5 #midway across graph
-        y_pos <- 0.8*ylims[2] #80% of way up
-        dfs <- df()[df()$Months==Months,]
-        ggplot(dfs, aes(x=Schools, y=Nitems, group=1)) +
-          geom_bar(stat = "identity", fill='goldenrod') +
-          coord_cartesian(ylim=ylims) +  #want same y-scale as 1st graph
-          annotate("text", label=Months, x=x_pos, y=y_pos, size=10)
-      }
+        if(exists("Months")){  #else if month has been chosen; drill down to nitems by school
+          x_pos <- length(unique(df()$Schools))/2 + 0.5 #midway across graph
+          y_pos <- 0.8*ylims[2] #80% of way up
+          dfs <- df()[df()$Months==Months,]
+          ggplot(dfs, aes(x=Schools, y=Nitems, group=1)) +
+            geom_bar(stat = "identity", fill='goldenrod') +
+            coord_cartesian(ylim=ylims) +  #want same y-scale as 1st graph
+            annotate("text", label=Months, x=x_pos, y=y_pos, size=10)
+        }
       }
     })
     if (input$showTable){
@@ -138,7 +138,7 @@ server <- function(input, output) {
     }
     
   })
-
+  
 }
 
 shinyApp(ui, server)
