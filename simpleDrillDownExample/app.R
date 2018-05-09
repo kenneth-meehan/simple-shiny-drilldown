@@ -1,30 +1,41 @@
 library(ggplot2)
 
 #Set up bogus dataframe:
-months <- c("Jan", "Jan", "Jan", "Jan",
+Months <- c("Jan", "Jan", "Jan", "Jan",
             "Feb", "Feb", "Feb", "Feb",
             "Mar", "Mar", "Mar", "Mar",
             "Apr", "Apr", "Apr", "Apr",
             "May", "May", "May", "May")
-schools <- c("School A", "School B", "School C", "School D", "School A", "School B", "School C", "School D",
+Schools <- c("School A", "School B", "School C", "School D", "School A", "School B", "School C", "School D",
              "School A", "School B", "School C", "School D", "School A", "School B", "School C", "School D",
              "School A", "School B", "School C", "School D")
-nitems <- c(0, 1016, 2001, 501, 666, 1962, 1999, 2019, 1776, 2018, 2525, 3087, 1000, 1000, 1000, 1000, 500, 500, 500, 500)
-df <- as.data.frame(cbind(months, schools, nitems))
-rm(months)
-rm(schools)
-rm(nitems)
-colnames(df)[2] <- "schools"
-df$nitems <- as.integer(as.character(df$nitems))
-df$months <- factor(df$months, levels=c("Jan", "Feb", "Mar", "Apr", "May"))
+Nitems <- c(0, 1016, 2001, 501, 666, 1962, 1999, 2019, 1776, 2018, 2525, 3087, 1000, 1000, 1000, 1000, 500, 500, 500, 500)
+df <- as.data.frame(cbind(Months, Schools, Nitems))
+rm(Months)
+rm(Schools)
+rm(Nitems)
+df$Nitems <- as.integer(as.character(df$Nitems))
+df$Months <- factor(df$Months, levels=c("Jan", "Feb", "Mar", "Apr", "May"))
 
 
 
 #Define user interface:
 ui <- fluidPage(
+  
+  titlePanel("Shiny Drilldown Example"),
+  
   fluidRow(
+    
+    column(width = 2,
+           wellPanel(
+             radioButtons("abscissa", "x-axis on left graph",
+                          c("Months" = "Months",
+                            "Schools" = "Schools"),
+                          selected="Months")
+           )
+    ),
 
-    column(width = 12, class = "well",
+    column(width = 10, class = "well",
            h5("Click on left plot to drill down."),
            fluidRow(
              column(width = 6,
@@ -44,8 +55,8 @@ ui <- fluidPage(
 #Define server:
 server <- function(input, output) {
   
-  x_dimension <- "schools"   #set manually for now, later make it user selectable
-  y_dimension <- "nitems"
+  x_dimension <- "Months"   #set manually for now, later make it user selectable
+  y_dimension <- "Nitems"
   
   output$plot1 <- renderPlot({
     q <- ggplot(df, aes_string(as.name(x_dimension), as.name(y_dimension))) +
@@ -80,14 +91,24 @@ server <- function(input, output) {
          break                                                       #leave loop once you've found where the click was
        }
       }
-      if(exists("schools")){  #once school has been chosen; drill down to items by month
-        x_pos <- length(unique(df$months))/2 + 0.5 #midway across graph
+      if(exists("Schools")){  #if school has been chosen; drill down to nitems by month
+        x_pos <- length(unique(df$Months))/2 + 0.5 #midway across graph
         y_pos <- 0.8*ylims[2] #80% of way up 
-        dfs <- df[df$schools==schools,]
-        ggplot(dfs, aes(x=months, y=nitems, group=1)) +
+        dfs <- df[df$Schools==Schools,]
+        ggplot(dfs, aes(x=Months, y=Nitems, group=1)) +
           geom_line(size=2) + geom_point(size=5, color='goldenrod') +
           coord_cartesian(ylim=ylims) +  #want same y-scale as 1st graph
-          annotate("text", label=schools, x=x_pos, y=y_pos, size=10)
+          annotate("text", label=Schools, x=x_pos, y=y_pos, size=10)
+      }else{
+      if(exists("Months")){  #if month has been chosen; drill down to nitems by school
+        x_pos <- length(unique(df$Schools))/2 + 0.5 #midway across graph
+        y_pos <- 0.8*ylims[2] #80% of way up
+        dfs <- df[df$Months==Months,]
+        ggplot(dfs, aes(x=Schools, y=Nitems, group=1)) +
+          geom_line(size=2) + geom_point(size=5, color='goldenrod') +
+          coord_cartesian(ylim=ylims) +  #want same y-scale as 1st graph
+          annotate("text", label=Months, x=x_pos, y=y_pos, size=10)
+      }
       }
     })
     
