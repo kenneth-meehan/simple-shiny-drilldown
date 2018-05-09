@@ -5,7 +5,7 @@ library(tidyr)
 #Define user interface:
 ui <- fluidPage(
   
-  titlePanel("Shiny Drilldown Example"),
+  #titlePanel("Shiny Drilldown Example"),  #takes up too much screen real estate
   
   fluidRow(
     
