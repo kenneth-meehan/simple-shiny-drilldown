@@ -46,8 +46,8 @@ server <- function(input, output) {
     q
     })
 
-  p <- reactive({ggplot(df, aes(schools, nitems)) +   #make graph a second time so that drilldown can read it
-      geom_bar(stat = "identity", fill='goldenrod')})
+  p <- reactive({ggplot(df, aes(schools, nitems)) +   #make graph a second time (as a function), to reference below
+                 geom_bar(stat = "identity", fill='goldenrod')})
   
   observe({
     if(is.null(input$plot1_click$x)) return(NULL)
@@ -60,26 +60,27 @@ server <- function(input, output) {
     })
 
     output$plot2 <- renderPlot({
-      #Find what bar was clicked:
+      #Find what bar was clicked. Need p() and not p because p is a function and not an object.
       nbars <- length(levels(p()$data[, p()$labels$x]))  #how many bars in the source graph, actually how many values of x labels
       xcuts <- seq(0.5, nbars+0.5, 1)                    #x-values of boundaries bewteen bars' click zones
       ytops <- rep(0, nbars)                             #max y values for each bar; initialize each to 0
       for (bar in 1:nbars){
        ytops[bar] <-  sum(df[df[, p()$labels$x]==levels(p()$data[, p()$labels$x])[bar], p()$labels$y]) #add up all y-values for this bar. CONVOLUTED!
        if(cx>xcuts[bar] & cx<=xcuts[bar+1] & cy<=ytops[bar]){
-         school <- levels(p()$data[, p()$labels$x])[bar] #a little ugly that we say school here. Should be more generic.
+         # school <- levels(p()$data[, p()$labels$x])[bar] #a little ugly that we say school here. Should be more generic.
+         assign(p()$labels$x, levels(p()$data[, p()$labels$x])[bar]) #now more generic! but now we set schools, not school...
          break                                           #leave loop once you've found where the click was
        }
       }
     
-      if(exists("school")){  #school won't exist if not set above
+      if(exists("schools")){  #school won't exist if not set above
         x_pos <- length(unique(df$months))/2 + 0.5 #midway across graph
         y_pos <- 0.8*ylims[2] #80% of way up 
-        dfs <- df[df$schools==school,]
+        dfs <- df[df$schools==schools,]
         ggplot(dfs, aes(x=months, y=nitems, group=1)) +
           geom_line(size=2) + geom_point(size=5, color='goldenrod') +
           coord_cartesian(ylim=ylims) +  #want same y-scale as 1st graph
-          annotate("text", label=school, x=x_pos, y=y_pos, size=10)
+          annotate("text", label=schools, x=x_pos, y=y_pos, size=10)
       }
     })
     
