@@ -11,8 +11,13 @@ schools <- c("School A", "School B", "School C", "School D", "School A", "School
              "School A", "School B", "School C", "School D")
 nitems <- c(0, 1016, 2001, 501, 666, 1962, 1999, 2019, 1776, 2018, 2525, 3087, 1000, 1000, 1000, 1000, 500, 500, 500, 500)
 df <- as.data.frame(cbind(months, schools, nitems))
+rm(months)
+rm(schools)
+rm(nitems)
+colnames(df)[2] <- "schools"
 df$nitems <- as.integer(as.character(df$nitems))
 df$months <- factor(df$months, levels=c("Jan", "Feb", "Mar", "Apr", "May"))
+
 
 
 #Define user interface:
@@ -39,14 +44,18 @@ ui <- fluidPage(
 #Define server:
 server <- function(input, output) {
   
+  x_dimension <- "schools"   #set manually for now, later make it user selectable
+  y_dimension <- "nitems"
+  
   output$plot1 <- renderPlot({
-    q <- ggplot(df, aes(schools, nitems)) +
+    q <- ggplot(df, aes_string(as.name(x_dimension), as.name(y_dimension))) +
          geom_bar(stat = "identity", fill='goldenrod')
     ylims <<- ggplot_build(q)$layout$panel_scales_y[[1]]$range$range #assign to outer env with <<-
     q
     })
 
-  p <- reactive({ggplot(df, aes(schools, nitems)) +   #make graph a second time (as a function), to reference below
+  #make graph a second time (as a function), to reference below
+  p <- reactive({ggplot(df, aes_string(as.name(x_dimension), as.name(y_dimension))) +
                  geom_bar(stat = "identity", fill='goldenrod')})
   
   observe({
@@ -67,13 +76,11 @@ server <- function(input, output) {
       for (bar in 1:nbars){
        ytops[bar] <-  sum(df[df[, p()$labels$x]==levels(p()$data[, p()$labels$x])[bar], p()$labels$y]) #add up all y-values for this bar. CONVOLUTED!
        if(cx>xcuts[bar] & cx<=xcuts[bar+1] & cy<=ytops[bar]){
-         # school <- levels(p()$data[, p()$labels$x])[bar] #a little ugly that we say school here. Should be more generic.
          assign(p()$labels$x, levels(p()$data[, p()$labels$x])[bar]) #now more generic! but now we set schools, not school...
-         break                                           #leave loop once you've found where the click was
+         break                                                       #leave loop once you've found where the click was
        }
       }
-    
-      if(exists("schools")){  #school won't exist if not set above
+      if(exists("schools")){  #once school has been chosen; drill down to items by month
         x_pos <- length(unique(df$months))/2 + 0.5 #midway across graph
         y_pos <- 0.8*ylims[2] #80% of way up 
         dfs <- df[df$schools==schools,]
