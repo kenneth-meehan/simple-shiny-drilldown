@@ -1,15 +1,9 @@
 library(ggplot2)
 
 #Set up bogus dataframe:
-Months <- c("Jan", "Jan", "Jan", "Jan",
-            "Feb", "Feb", "Feb", "Feb",
-            "Mar", "Mar", "Mar", "Mar",
-            "Apr", "Apr", "Apr", "Apr",
-            "May", "May", "May", "May")
-Schools <- c("School A", "School B", "School C", "School D", "School A", "School B", "School C", "School D",
-             "School A", "School B", "School C", "School D", "School A", "School B", "School C", "School D",
-             "School A", "School B", "School C", "School D")
-Nitems <- c(0, 1016, 2001, 501, 666, 1962, 1999, 2019, 1776, 2018, 2525, 3087, 1000, 1000, 1000, 1000, 500, 500, 500, 500)
+Months <- c(rep("Jan", 4), rep("Feb", 4), rep("Mar", 4), rep("Apr", 4), rep("May", 4))
+Schools <- rep(c("School A", "School B", "School C", "School D"),5) 
+Nitems <- c(0, 1016, 2001, 501, 666, 1962, 1999, 2019, 1776, 2018, 2525, 3087, 1018, 1891, 1511, 2617, 371, 678, 2191, 2216)
 df <- as.data.frame(cbind(Months, Schools, Nitems))
 rm(Months)
 rm(Schools)
@@ -104,7 +98,8 @@ server <- function(input, output) {
         y_pos <- 0.8*ylims[2] #80% of way up
         dfs <- df[df$Months==Months,]
         ggplot(dfs, aes(x=Schools, y=Nitems, group=1)) +
-          geom_line(size=2) + geom_point(size=5, color='goldenrod') +
+          #geom_line(size=2) + geom_point(size=5, color='goldenrod') +
+          geom_bar(stat = "identity", fill='goldenrod') +
           coord_cartesian(ylim=ylims) +  #want same y-scale as 1st graph
           annotate("text", label=Months, x=x_pos, y=y_pos, size=10)
       }
