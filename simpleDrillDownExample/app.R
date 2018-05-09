@@ -1,4 +1,6 @@
 library(ggplot2)
+library(DT)
+library(tidyr)
 
 #Define user interface:
 ui <- fluidPage(
@@ -22,7 +24,8 @@ ui <- fluidPage(
              radioButtons("abscissa", "x-axis on First Graph",
                           c("Schools" = "Schools",
                             "Months" = "Months"),
-                          selected="Schools")
+                          selected="Schools"),
+             checkboxInput("showTable", "Show data table?", value = FALSE)
            )
     ),
     column(width = 10, class = "well",
@@ -36,6 +39,11 @@ ui <- fluidPage(
              column(width = 6,
                     plotOutput("plot2", height = 300)
              )
+           ),
+           fluidRow(
+             column(width=12,
+                    DT::dataTableOutput("mytable")
+                    )
            )
     )
     
@@ -115,8 +123,20 @@ server <- function(input, output) {
       }
       }
     })
+    if (input$showTable){
+      output$mytable <- renderDataTable({
+        wide <- spread(df(), Months, Nitems)     #Go from tall to wide format.
+        colnames(wide)[1] <- "School"            #"School" is better than "Schools".
+        wide$School <- as.character(wide$School) #Can't add "Totals" to last row if School is a factor.
+        wide[nrow(wide)+1,] <- c("Totals", colSums(wide[,2:ncol(wide)])) #Add totals row.
+        wide[, 2:ncol(wide)] <- sapply(wide[, 2:ncol(wide)], as.integer) #Convert to integers.
+        wide$Totals <- as.integer(0)                                     #Start totals column with 0's.
+        wide[,ncol(wide)] <- c(rowSums(wide[,2:(ncol(wide)-1)]))         #Replace 0's with real totals.
+        wide[nrow(wide),1] <- "Totals"
+        datatable(wide, rownames=FALSE, options=list(paging=FALSE, searching=FALSE, bInfo=FALSE))
+      })
+    }
     
-
   })
 
 }
