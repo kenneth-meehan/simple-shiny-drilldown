@@ -19,7 +19,6 @@ df$nitems <- as.integer(as.character(df$nitems))
 df$months <- factor(df$months, levels=c("Jan", "Feb", "Mar", "Apr", "May"))
 
 
-
 #Define user interface:
 ui <- fluidPage(
   fluidRow(
@@ -44,7 +43,7 @@ ui <- fluidPage(
 #Define server:
 server <- function(input, output) {
   
-  x_dimension <- "schools"   #set manually for now, later make it user selectable
+  x_dimension <- "months"   #set manually for now, later make it user selectable
   y_dimension <- "nitems"
   
   output$plot1 <- renderPlot({
@@ -80,7 +79,7 @@ server <- function(input, output) {
          break                                                       #leave loop once you've found where the click was
        }
       }
-      if(exists("schools")){  #once school has been chosen; drill down to items by month
+      if(exists("schools")){  #if school has been chosen; drill down to items by month
         x_pos <- length(unique(df$months))/2 + 0.5 #midway across graph
         y_pos <- 0.8*ylims[2] #80% of way up 
         dfs <- df[df$schools==schools,]
@@ -88,6 +87,15 @@ server <- function(input, output) {
           geom_line(size=2) + geom_point(size=5, color='goldenrod') +
           coord_cartesian(ylim=ylims) +  #want same y-scale as 1st graph
           annotate("text", label=schools, x=x_pos, y=y_pos, size=10)
+      }
+      if(exists("months")){  #if month has been chosen; drill down to items by school
+        x_pos <- length(unique(df$schools))/2 + 0.5 #midway across graph
+        y_pos <- 0.8*ylims[2] #80% of way up 
+        dfs <- df[df$months==months,]
+        ggplot(dfs, aes(x=schools, y=nitems, group=1)) +
+          geom_line(size=2) + geom_point(size=5, color='goldenrod') +
+          coord_cartesian(ylim=ylims) +  #want same y-scale as 1st graph
+          annotate("text", label=months, x=x_pos, y=y_pos, size=10)
       }
     })
     
