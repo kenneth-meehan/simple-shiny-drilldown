@@ -1,19 +1,5 @@
 library(ggplot2)
 
-#Set up bogus dataframe:
-Nmonths  <- 7
-Nschools <- 5
-maxNitemsPerSchoolPerMonth <- 2000
-month_names <- format(ISOdate(2018,1:12,1),"%b")[1:Nmonths] #names of first Nmonths months
-Months  <- rep(month_names, each=Nschools)
-Schools <- rep(paste("School",LETTERS[1:Nschools]), times=Nmonths)
-Nitems <- sample(0:maxNitemsPerSchoolPerMonth,Nmonths*Nschools,replace=T)
-df <- as.data.frame(cbind(Months, Schools, Nitems))
-rm(Months, Schools, Nitems)
-df$Nitems <- as.integer(as.character(df$Nitems))
-df$Months <- factor(df$Months, levels=month_names)
-
-
 #Define user interface:
 ui <- fluidPage(
   
@@ -23,14 +9,20 @@ ui <- fluidPage(
     
     column(width = 2,
            wellPanel(
-             radioButtons("abscissa", "x-axis on left graph",
-                          c("Schools" = "Schools",
-                            "Months" = "Months"
-                            ),
-                          selected="Schools"),
-             sliderInput("Nschools", "# Schools",
+             helpText("Moving a slider re-randomizes the data."),
+             sliderInput("Nschools", "Number of Schools",
+                         min = 2, max = 9,
+                         value = 5),
+             sliderInput("Nmonths", "Number of Months",
                          min = 2, max = 12,
-                         value = 5)
+                         value = 4),
+             sliderInput("maxNitemsPerSchoolPerMonth", "Max Items per School per Month",
+                         min = 1000, max = 5000,
+                         value = 2000, step=500),
+             radioButtons("abscissa", "x-axis on First Graph",
+                          c("Schools" = "Schools",
+                            "Months" = "Months"),
+                          selected="Schools")
            )
     ),
     column(width = 10, class = "well",
@@ -54,16 +46,31 @@ ui <- fluidPage(
 server <- function(input, output) {
   
   y_dimension <- "Nitems"
+
+  df <- reactive({
+    Nmonths  <- input$Nmonths
+    Nschools <- input$Nschools
+    maxNitemsPerSchoolPerMonth <- input$maxNitemsPerSchoolPerMonth
+    month_names <- format(ISOdate(2018,1:12,1),"%b")[1:Nmonths] #names of first Nmonths months
+    Months  <- rep(month_names, each=Nschools)
+    Schools <- rep(paste("School",LETTERS[1:Nschools]), times=Nmonths)
+    Nitems <- sample(0:maxNitemsPerSchoolPerMonth,Nmonths*Nschools,replace=T)
+    d <- as.data.frame(cbind(Months, Schools, Nitems))
+    rm(Months, Schools, Nitems)
+    d$Nitems <- as.integer(as.character(d$Nitems))
+    d$Months <- factor(d$Months, levels=month_names)
+    d
+  })
   
   output$plot1 <- renderPlot({
-    q <- ggplot(df, aes_string(input$abscissa, as.name(y_dimension))) +
+    q <- ggplot(df(), aes_string(input$abscissa, as.name(y_dimension))) +
          geom_bar(stat = "identity", fill='goldenrod')
     ylims <<- ggplot_build(q)$layout$panel_scales_y[[1]]$range$range #assign to outer env with <<-
     q
     })
 
   #make graph a second time (as a function), to reference below
-  p <- reactive({ggplot(df, aes_string(input$abscissa, as.name(y_dimension))) +
+  p <- reactive({ggplot(df(), aes_string(input$abscissa, as.name(y_dimension))) +
                  geom_bar(stat = "identity", fill='goldenrod')})
   
   observe({
@@ -77,30 +84,30 @@ server <- function(input, output) {
     })
 
     output$plot2 <- renderPlot({
-      #Find what bar was clicked. Need p() and not p because p is a function and not an object.
+      #Find what bar was clicked. Need p() and not p because p is a function and not an object. Same for df().
       nbars <- length(levels(p()$data[, p()$labels$x]))  #how many bars in the source graph, actually how many values of x labels
       xcuts <- seq(0.5, nbars+0.5, 1)                    #x-values of boundaries bewteen bars' click zones
       ytops <- rep(0, nbars)                             #max y values for each bar; initialize each to 0
       for (bar in 1:nbars){
-       ytops[bar] <-  sum(df[df[, p()$labels$x]==levels(p()$data[, p()$labels$x])[bar], p()$labels$y]) #add up all y-values for this bar. Sleek!
-       if(cx>xcuts[bar] & cx<=xcuts[bar+1] & cy<=ytops[bar]){
-         assign(p()$labels$x, levels(p()$data[, p()$labels$x])[bar])
-         break                                                       #leave loop once you've found where the click was
+       ytops[bar] <-  sum(df()[df()[, p()$labels$x]==levels(p()$data[, p()$labels$x])[bar], p()$labels$y]) #add up all y-values for this bar. Sleek!
+       if(cx>xcuts[bar] & cx<=xcuts[bar+1] & cy<=ytops[bar]){         #If click is in this bar,
+         assign(p()$labels$x, levels(p()$data[, p()$labels$x])[bar])  #Assign to Schools or Months the label of that bar
+         break                                                        #Leave loop once you've found where the click was
        }
       }
       if(exists("Schools")){  #if school has been chosen; drill down to nitems by month
-        x_pos <- length(unique(df$Months))/2 + 0.5 #midway across graph
+        x_pos <- length(unique(df()$Months))/2 + 0.5 #midway across graph
         y_pos <- 0.8*ylims[2] #80% of way up 
-        dfs <- df[df$Schools==Schools,]
+        dfs <- df()[df()$Schools==Schools,]
         ggplot(dfs, aes(x=Months, y=Nitems, group=1)) +
           geom_line(size=2) + geom_point(size=5, color='goldenrod') +
           coord_cartesian(ylim=ylims) +  #want same y-scale as 1st graph
           annotate("text", label=Schools, x=x_pos, y=y_pos, size=10)
       }else{
       if(exists("Months")){  #else if month has been chosen; drill down to nitems by school
-        x_pos <- length(unique(df$Schools))/2 + 0.5 #midway across graph
+        x_pos <- length(unique(df()$Schools))/2 + 0.5 #midway across graph
         y_pos <- 0.8*ylims[2] #80% of way up
-        dfs <- df[df$Months==Months,]
+        dfs <- df()[df()$Months==Months,]
         ggplot(dfs, aes(x=Schools, y=Nitems, group=1)) +
           geom_bar(stat = "identity", fill='goldenrod') +
           coord_cartesian(ylim=ylims) +  #want same y-scale as 1st graph
