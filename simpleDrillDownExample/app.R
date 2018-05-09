@@ -39,12 +39,12 @@ ui <- fluidPage(
            h5("Click on left plot to drill down."),
            fluidRow(
              column(width = 6,
-                    plotOutput("plot1", height = 500,
+                    plotOutput("plot1", height = 300,
                                click="plot1_click"
                     )
              ),
              column(width = 6,
-                    plotOutput("plot2", height=500)
+                    plotOutput("plot2", height = 300)
              )
            )
     )
@@ -55,18 +55,17 @@ ui <- fluidPage(
 #Define server:
 server <- function(input, output) {
   
-  x_dimension <- "Months"   #set manually for now, later make it user selectable
   y_dimension <- "Nitems"
   
   output$plot1 <- renderPlot({
-    q <- ggplot(df, aes_string(as.name(x_dimension), as.name(y_dimension))) +
+    q <- ggplot(df, aes_string(input$abscissa, as.name(y_dimension))) +
          geom_bar(stat = "identity", fill='goldenrod')
     ylims <<- ggplot_build(q)$layout$panel_scales_y[[1]]$range$range #assign to outer env with <<-
     q
     })
 
   #make graph a second time (as a function), to reference below
-  p <- reactive({ggplot(df, aes_string(as.name(x_dimension), as.name(y_dimension))) +
+  p <- reactive({ggplot(df, aes_string(input$abscissa, as.name(y_dimension))) +
                  geom_bar(stat = "identity", fill='goldenrod')})
   
   observe({
@@ -100,7 +99,7 @@ server <- function(input, output) {
           coord_cartesian(ylim=ylims) +  #want same y-scale as 1st graph
           annotate("text", label=Schools, x=x_pos, y=y_pos, size=10)
       }else{
-      if(exists("Months")){  #if month has been chosen; drill down to nitems by school
+      if(exists("Months")){  #else if month has been chosen; drill down to nitems by school
         x_pos <- length(unique(df$Schools))/2 + 0.5 #midway across graph
         y_pos <- 0.8*ylims[2] #80% of way up
         dfs <- df[df$Months==Months,]
