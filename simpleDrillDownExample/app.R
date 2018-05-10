@@ -13,9 +13,9 @@ ui <- fluidPage(
            wellPanel(
              helpText("Moving a slider re-randomizes the data."),
              sliderInput("Nschools", "Number of Schools",
-                         min=2, max=9, value=5),
+                         min=2, max=7, value=5),
              sliderInput("Nmonths", "Number of Months",
-                         min=2, max=12, value=4),
+                         min=2, max=12, value=3),
              sliderInput("maxNitemsPerSchoolPerMonth", "Max Items per School per Month",
                          min=1000, max=5000, value=2000, step=500),
              radioButtons("abscissa", "x-axis on First Graph",
