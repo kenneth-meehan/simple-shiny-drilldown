@@ -13,14 +13,11 @@ ui <- fluidPage(
            wellPanel(
              helpText("Moving a slider re-randomizes the data."),
              sliderInput("Nschools", "Number of Schools",
-                         min = 2, max = 9,
-                         value = 5),
+                         min=2, max=9, value=5),
              sliderInput("Nmonths", "Number of Months",
-                         min = 2, max = 12,
-                         value = 4),
+                         min=2, max=12, value=4),
              sliderInput("maxNitemsPerSchoolPerMonth", "Max Items per School per Month",
-                         min = 1000, max = 5000,
-                         value = 2000, step=500),
+                         min=1000, max=5000, value=2000, step=500),
              radioButtons("abscissa", "x-axis on First Graph",
                           c("Schools" = "Schools",
                             "Months" = "Months"),
@@ -71,25 +68,22 @@ server <- function(input, output) {
   })
   
   output$plot1 <- renderPlot({
-    q <- ggplot(df(), aes_string(input$abscissa, as.name(y_dimension))) +
+    ggplot(df(), aes_string(input$abscissa, as.name(y_dimension))) +
       geom_bar(stat = "identity", fill='goldenrod')
-    ylims <<- ggplot_build(q)$layout$panel_scales_y[[1]]$range$range #assign to outer env with <<-
-    q
   })
   
   #make graph a second time (as a function), to reference below
   p <- reactive({ggplot(df(), aes_string(input$abscissa, as.name(y_dimension))) +
       geom_bar(stat = "identity", fill='goldenrod')})
+  #also make ylims reactive so that oberver below will update when they change, e.g. via slider change
+  ylims <- reactive({
+    ggplot_build(p())$layout$panel_scales_y[[1]]$range$range
+  })
   
   observe({
     if(is.null(input$plot1_click$x)) return(NULL)
-    clicktext <- c(input$plot1_click$x, input$plot1_click$y)
     cx <- input$plot1_click$x
     cy <- input$plot1_click$y
-    
-    output$text1 <- renderText({
-      expr=paste("click coords:",clicktext[1], clicktext[2])
-    })
     
     output$plot2 <- renderPlot({
       #Find what bar was clicked. Need p() and not p because p is a function and not an object. Same for df().
@@ -105,20 +99,20 @@ server <- function(input, output) {
       }
       if(exists("Schools")){  #if school has been chosen; drill down to nitems by month
         x_pos <- length(unique(df()$Months))/2 + 0.5 #midway across graph
-        y_pos <- 0.8*ylims[2] #80% of way up 
+        y_pos <- 0.8*ylims()[2] #80% of way up 
         dfs <- df()[df()$Schools==Schools,]
         ggplot(dfs, aes(x=Months, y=Nitems, group=1)) +
           geom_line(size=2) + geom_point(size=5, color='goldenrod') +
-          coord_cartesian(ylim=ylims) +  #want same y-scale as 1st graph
+          coord_cartesian(ylim=ylims()) +  #want same y-scale as 1st graph
           annotate("text", label=Schools, x=x_pos, y=y_pos, size=10)
       }else{
         if(exists("Months")){  #else if month has been chosen; drill down to nitems by school
           x_pos <- length(unique(df()$Schools))/2 + 0.5 #midway across graph
-          y_pos <- 0.8*ylims[2] #80% of way up
+          y_pos <- 0.8*ylims()[2] #80% of way up
           dfs <- df()[df()$Months==Months,]
           ggplot(dfs, aes(x=Schools, y=Nitems, group=1)) +
             geom_bar(stat = "identity", fill='goldenrod') +
-            coord_cartesian(ylim=ylims) +  #want same y-scale as 1st graph
+            coord_cartesian(ylim=ylims()) +  #want same y-scale as 1st graph
             annotate("text", label=Months, x=x_pos, y=y_pos, size=10)
         }
       }
