@@ -1,3 +1,10 @@
+
+#Shiny Drilldown Example
+#Use randomly-generated data to explore the mechanics and possibilities of drilling down within a shiny app.
+#Learn about reactive variables and observers.
+#Intend to apply lessons learned here to shiny dashboards with real data, include those from Ed.
+#KM May 2018
+
 library(ggplot2)
 library(DT)
 library(tidyr)
@@ -22,7 +29,8 @@ ui <- fluidPage(
                           c("Schools" = "Schools",
                             "Months" = "Months"),
                           selected="Schools"),
-             checkboxInput("showTable", "Show data table?", value = FALSE)
+             checkboxInput("showTable", "Show data table?", value = FALSE),
+             downloadButton('download',"Download")
            )
     ),
     column(width = 10, class = "well",
@@ -74,7 +82,8 @@ server <- function(input, output) {
   
   #make graph a second time (as a function), to reference below
   p <- reactive({ggplot(df(), aes_string(input$abscissa, as.name(y_dimension))) +
-      geom_bar(stat = "identity", fill='goldenrod')})
+                        geom_bar(stat = "identity", fill='goldenrod')})
+  
   #also make ylims reactive so that oberver below will update when they change, e.g. via slider change
   ylims <- reactive({
     ggplot_build(p())$layout$panel_scales_y[[1]]$range$range
@@ -117,6 +126,10 @@ server <- function(input, output) {
         }
       }
     })
+  })
+  
+  observe({
+    if(!input$showTable) output$mytable <- renderDataTable({NULL})
     if (input$showTable){
       output$mytable <- renderDataTable({
         wide <- spread(df(), Months, Nitems)     #Go from tall to wide format.
@@ -127,11 +140,22 @@ server <- function(input, output) {
         wide$Totals <- as.integer(0)                                     #Start totals column with 0's.
         wide[,ncol(wide)] <- c(rowSums(wide[,2:(ncol(wide)-1)]))         #Replace 0's with real totals.
         wide[nrow(wide),1] <- "Totals"
-        datatable(wide, rownames=FALSE, options=list(paging=FALSE, searching=FALSE, bInfo=FALSE))
+        datatable(wide, rownames=FALSE,
+                  extensions = list("Buttons" = NULL),
+                  options=list(paging=FALSE,
+                               searching=FALSE,
+                               bInfo=FALSE,
+                               buttons=c('csv')))
       })
     }
-    
   })
+  
+  output$download <- downloadHandler(
+    filename = function(){"random_data.csv"}, 
+    content = function(fname){
+      write.csv(df(), fname, row.names = FALSE)
+    }
+  )
   
 }
 
